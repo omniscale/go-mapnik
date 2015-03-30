@@ -1,5 +1,7 @@
 package mapnik
 
+//go:generate bash ./configure.bash
+
 // #include <stdlib.h>
 // #include "mapnik_c_api.h"
 import "C"
