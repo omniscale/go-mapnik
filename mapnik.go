@@ -29,18 +29,21 @@ func init() {
 	RegisterFonts(fontPath)
 }
 
+// RegisterDatasources adds path to the Mapnik plugin search path.
 func RegisterDatasources(path string) {
 	cs := C.CString(path)
 	defer C.free(unsafe.Pointer(cs))
 	C.mapnik_register_datasources(cs)
 }
 
+// RegisterDatasources adds path to the Mapnik fonts search path.
 func RegisterFonts(path string) {
 	cs := C.CString(path)
 	defer C.free(unsafe.Pointer(cs))
 	C.mapnik_register_fonts(cs)
 }
 
+// LogSeverity sets the global log level for Mapnik. Requires a Mapnik build with logging enabled.
 func LogSeverity(level LogLevel) {
 	C.mapnik_logging_set_severity(C.int(level))
 }
@@ -53,11 +56,12 @@ type Map struct {
 	layerStatus []bool
 }
 
+// New initializes a new Map.
 func New() *Map {
 	return &Map{
 		m:      C.mapnik_map(C.uint(800), C.uint(600)),
-		width:  int(800),
-		height: int(600),
+		width:  800,
+		height: 600,
 	}
 }
 
@@ -65,6 +69,7 @@ func (m *Map) lastError() error {
 	return errors.New("mapnik: " + C.GoString(C.mapnik_map_last_error(m.m)))
 }
 
+// Load reads in a Mapnik map XML.
 func (m *Map) Load(stylesheet string) error {
 	cs := C.CString(stylesheet)
 	defer C.free(unsafe.Pointer(cs))
@@ -74,31 +79,37 @@ func (m *Map) Load(stylesheet string) error {
 	return nil
 }
 
-func (m *Map) Resize(width, height uint32) {
+// Resize changes the map size in pixel.
+func (m *Map) Resize(width, height int) {
 	C.mapnik_map_resize(m.m, C.uint(width), C.uint(height))
-	m.width = int(width)
-	m.height = int(height)
+	m.width = width
+	m.height = height
 }
 
+// Free deallocates the map.
 func (m *Map) Free() {
 	C.mapnik_map_free(m.m)
 	m.m = nil
 }
 
+// SRS returns the projection of the map.
 func (m *Map) SRS() string {
 	return C.GoString(C.mapnik_map_get_srs(m.m))
 }
 
+// SetSRS sets the projection of the map as a proj4 string ('+init=epsg:4326', etc).
 func (m *Map) SetSRS(srs string) {
 	cs := C.CString(srs)
 	defer C.free(unsafe.Pointer(cs))
 	C.mapnik_map_set_srs(m.m, cs)
 }
 
+// ScaleDenominator returns the current scale denominator. Call after Resize and ZoomAll/ZoomTo.
 func (m *Map) ScaleDenominator() float64 {
 	return float64(C.mapnik_map_get_scale_denominator(m.m))
 }
 
+// ZoomAll zooms to the maximum extent.
 func (m *Map) ZoomAll() error {
 	if C.mapnik_map_zoom_all(m.m) != 0 {
 		return m.lastError()
@@ -106,6 +117,7 @@ func (m *Map) ZoomAll() error {
 	return nil
 }
 
+// ZoomTo zooms to the given bounding box.
 func (m *Map) ZoomTo(minx, miny, maxx, maxy float64) {
 	bbox := C.mapnik_bbox(C.double(minx), C.double(miny), C.double(maxx), C.double(maxy))
 	defer C.mapnik_bbox_free(bbox)
@@ -181,6 +193,7 @@ type LayerSelector interface {
 	Select(layername string) Status
 }
 
+// SelectLayers enables/disables single layers.
 func (m *Map) SelectLayers(selector LayerSelector) {
 	m.storeLayerStatus()
 	n := C.mapnik_map_layer_count(m.m)
@@ -196,6 +209,7 @@ func (m *Map) SelectLayers(selector LayerSelector) {
 	}
 }
 
+// ResetLayer resets all layers to the initial status.
 func (m *Map) ResetLayers() {
 	m.resetLayerStatus()
 }
@@ -208,12 +222,17 @@ func (m *Map) ResetMaxExtent() {
 	C.mapnik_map_reset_maximum_extent(m.m)
 }
 
+// RenderOpts defines rendering options.
 type RenderOpts struct {
-	Scale       float64
+	// Scale renders the map at a fixed scale denominator.
+	Scale float64
+	// ScaleFactor renders the map with larger fonts sizes, line width, etc. For printing or retina/hq iamges.
 	ScaleFactor float64
-	Format      string
+	// Format for the rendered image ('jpeg80', 'png256', etc. see: https://github.com/mapnik/mapnik/wiki/Image-IO)
+	Format string
 }
 
+// Render returns the map as an encoded image.
 func (m *Map) Render(opts RenderOpts) ([]byte, error) {
 	scaleFactor := opts.ScaleFactor
 	if scaleFactor == 0.0 {
@@ -241,6 +260,7 @@ func (m *Map) Render(opts RenderOpts) ([]byte, error) {
 	return C.GoBytes(unsafe.Pointer(b.ptr), C.int(b.len)), nil
 }
 
+// RenderImage returns the map as an unencoded image.Image.
 func (m *Map) RenderImage(opts RenderOpts) (*image.NRGBA, error) {
 	scaleFactor := opts.ScaleFactor
 	if scaleFactor == 0.0 {
@@ -262,6 +282,7 @@ func (m *Map) RenderImage(opts RenderOpts) (*image.NRGBA, error) {
 	return img, nil
 }
 
+// RenderToFile writes the map as an encoded image to the file system.
 func (m *Map) RenderToFile(opts RenderOpts, path string) error {
 	scaleFactor := opts.ScaleFactor
 	if scaleFactor == 0.0 {
@@ -282,6 +303,7 @@ func (m *Map) RenderToFile(opts RenderOpts, path string) error {
 	return nil
 }
 
+// SetBufferSize sets the pixel buffer at the map image edges where Mapnik should not render any labels.
 func (m *Map) SetBufferSize(s int) {
 	C.mapnik_map_set_buffer_size(m.m, C.int(s))
 }
