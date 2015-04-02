@@ -1,3 +1,6 @@
+
+// Formatted with: astyle  --style=google --pad-oper --add-brackets
+
 #include <mapnik/debug.hpp>
 #include <mapnik/version.hpp>
 #include <mapnik/graphics.hpp>
@@ -20,7 +23,10 @@ extern "C"
 static std::string * register_err;
 
 inline void mapnik_register_reset_last_error() {
-    if (register_err) { delete register_err; register_err = NULL; }
+    if (register_err) {
+        delete register_err;
+        register_err = NULL;
+    }
 }
 
 int mapnik_register_datasources(const char* path) {
@@ -59,18 +65,18 @@ const char *mapnik_register_last_error() {
 void mapnik_logging_set_severity(int level) {
     mapnik::logger::severity_type severity;
     switch (level) {
-        case MAPNIK_DEBUG:
-            severity = mapnik::logger::debug;
-            break;
-        case MAPNIK_WARN:
-            severity = mapnik::logger::warn;
-            break;
-        case MAPNIK_ERROR:
-            severity = mapnik::logger::error;
-            break;
-        default:
-            severity = mapnik::logger::none;
-            break;
+    case MAPNIK_DEBUG:
+        severity = mapnik::logger::debug;
+        break;
+    case MAPNIK_WARN:
+        severity = mapnik::logger::warn;
+        break;
+    case MAPNIK_ERROR:
+        severity = mapnik::logger::error;
+        break;
+    default:
+        severity = mapnik::logger::none;
+        break;
     }
     mapnik::logger::instance().set_severity(severity);
 }
@@ -82,25 +88,34 @@ struct _mapnik_map_t {
 
 mapnik_map_t * mapnik_map(unsigned width, unsigned height) {
     mapnik_map_t * map = new mapnik_map_t;
-    map->m = new mapnik::Map(width,height);
+    map->m = new mapnik::Map(width, height);
     map->err = NULL;
     return map;
 }
 
 void mapnik_map_free(mapnik_map_t * m) {
     if (m)  {
-        if (m->m) delete m->m;
-        if (m->err) delete m->err;
+        if (m->m) {
+            delete m->m;
+        }
+        if (m->err) {
+            delete m->err;
+        }
         delete m;
     }
 }
 
 inline void mapnik_map_reset_last_error(mapnik_map_t *m) {
-    if (m && m->err) { delete m->err; m->err = NULL; }
+    if (m && m->err) {
+        delete m->err;
+        m->err = NULL;
+    }
 }
 
 const char * mapnik_map_get_srs(mapnik_map_t * m) {
-    if (m && m->m) return m->m->srs().c_str();
+    if (m && m->m) {
+        return m->m->srs().c_str();
+    }
     return NULL;
 }
 
@@ -113,7 +128,9 @@ int mapnik_map_set_srs(mapnik_map_t * m, const char* srs) {
 }
 
 double mapnik_map_get_scale_denominator(mapnik_map_t * m) {
-    if (m && m->m) return m->m->scale_denominator();
+    if (m && m->m) {
+        return m->m->scale_denominator();
+    }
     return 0.0;
 }
 
@@ -121,7 +138,7 @@ int mapnik_map_load(mapnik_map_t * m, const char* stylesheet) {
     mapnik_map_reset_last_error(m);
     if (m && m->m) {
         try {
-            mapnik::load_map(*m->m,stylesheet);
+            mapnik::load_map(*m->m, stylesheet);
         } catch (std::exception const& ex) {
             m->err = new std::string(ex.what());
             return -1;
@@ -146,14 +163,14 @@ int mapnik_map_zoom_all(mapnik_map_t * m) {
 }
 
 void mapnik_map_resize(mapnik_map_t *m, unsigned int width, unsigned int height) {
-    if (m&& m->m) {
+    if (m && m->m) {
         m->m->resize(width, height);
     }
 }
 
 
 MAPNIKCAPICALL void mapnik_map_set_buffer_size(mapnik_map_t * m, int buffer_size) {
-	m->m->set_buffer_size(buffer_size);
+    m->m->set_buffer_size(buffer_size);
 }
 
 const char *mapnik_map_last_error(mapnik_map_t *m) {
@@ -175,8 +192,9 @@ mapnik_bbox_t * mapnik_bbox(double minx, double miny, double maxx, double maxy) 
 }
 
 void mapnik_bbox_free(mapnik_bbox_t * b) {
-    if (b)
+    if (b) {
         delete b;
+    }
 }
 
 void mapnik_map_zoom_to_box(mapnik_map_t * m, mapnik_bbox_t * b) {
@@ -191,7 +209,9 @@ struct _mapnik_image_t {
 
 void mapnik_image_free(mapnik_image_t * i) {
     if (i) {
-        if (i->i) delete i->i;
+        if (i->i) {
+            delete i->i;
+        }
         delete i;
     }
 }
@@ -226,7 +246,7 @@ int mapnik_map_render_to_file_scale(mapnik_map_t * m, const char* filepath, doub
     mapnik_map_reset_last_error(m);
     if (m && m->m) {
         try {
-            mapnik::image_32 buf(m->m->width(),m->m->height());
+            mapnik::image_32 buf(m->m->width(), m->m->height());
             mapnik::agg_renderer<mapnik::image_32> ren(*m->m, buf, scale_factor);
             if (scale > 0.0) {
                 ren.apply(scale);
@@ -246,8 +266,9 @@ int mapnik_map_render_to_file_scale(mapnik_map_t * m, const char* filepath, doub
 
 void mapnik_image_blob_free(mapnik_image_blob_t * b) {
     if (b) {
-        if (b->ptr)
+        if (b->ptr) {
             delete[] b->ptr;
+        }
         delete b;
     }
 }
@@ -280,7 +301,7 @@ const uint8_t * mapnik_image_to_raw(mapnik_image_t * i, size_t * size) {
 mapnik_image_t * mapnik_image_from_raw(const uint8_t * raw, int width, int height) {
     mapnik_image_t * img = new mapnik_image_t;
     img->i = new mapnik::image_32(width, height);
-    memcpy(img->i->raw_data(), raw, width*height*4);
+    memcpy(img->i->raw_data(), raw, width * height * 4);
     return img;
 }
 
