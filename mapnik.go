@@ -112,13 +112,13 @@ func (m *Map) ZoomTo(minx, miny, maxx, maxy float64) {
 	C.mapnik_map_zoom_to_box(m.m, bbox)
 }
 
-func (m *Map) BackgroundColor() color.RGBA {
-	c := color.RGBA{}
+func (m *Map) BackgroundColor() color.NRGBA {
+	c := color.NRGBA{}
 	C.mapnik_map_background(m.m, (*C.uint8_t)(&c.R), (*C.uint8_t)(&c.G), (*C.uint8_t)(&c.B), (*C.uint8_t)(&c.A))
 	return c
 }
 
-func (m *Map) SetBackgroundColor(c color.RGBA) {
+func (m *Map) SetBackgroundColor(c color.NRGBA) {
 	C.mapnik_map_set_background(m.m, C.uint8_t(c.R), C.uint8_t(c.G), C.uint8_t(c.B), C.uint8_t(c.A))
 }
 
