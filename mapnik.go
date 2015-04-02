@@ -181,19 +181,29 @@ func (m *Map) resetLayerStatus() {
 	m.layerStatus = nil
 }
 
+// Status defines if a layer should be rendered or not.
 type Status int
 
 const (
-	Exclude = -1
-	Default = 0
-	Include = 1
+	// Exclude layer from rendering.
+	Exclude Status = -1
+	// Default keeps layer at the current rendering status.
+	Default Status = 0
+	// Include layer for rendering.
+	Include Status = 1
 )
 
 type LayerSelector interface {
 	Select(layername string) Status
 }
 
-// SelectLayers enables/disables single layers.
+type SelectorFunc func(string) Status
+
+func (f SelectorFunc) Select(layername string) Status {
+	return f(layername)
+}
+
+// SelectLayers enables/disables single layers. LayerSelector or SelectorFunc gets called for each layer.
 func (m *Map) SelectLayers(selector LayerSelector) {
 	m.storeLayerStatus()
 	n := C.mapnik_map_layer_count(m.m)
