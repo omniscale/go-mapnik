@@ -1,3 +1,4 @@
+// Package mapnik renders beautiful maps with Mapnik.
 package mapnik
 
 //go:generate bash ./configure.bash
