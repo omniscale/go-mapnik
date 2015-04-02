@@ -9,11 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-
+	"runtime"
+	"strings"
 	"testing"
-
-	"bitbucket.org/omniscale/tileproxy/image/hextree"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMap(t *testing.T) {
@@ -21,9 +19,7 @@ func TestMap(t *testing.T) {
 	if err := m.Load("test/map.xml"); err != nil {
 		t.Fatal(err)
 	}
-	if m.SRS() != "+init=epsg:4326" {
-		t.Error("unexpeced srs: ", m.SRS())
-	}
+
 	m.ZoomAll()
 	img, err := m.RenderImage(RenderOpts{})
 	if err != nil {
@@ -45,6 +41,8 @@ func TestRenderFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("unable to create temp dir")
 	}
+	defer os.RemoveAll(out)
+
 	fname := filepath.Join(out, "out.png")
 	if err := m.RenderToFile(RenderOpts{}, fname); err != nil {
 		t.Fatal(err)
@@ -53,12 +51,85 @@ func TestRenderFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("unable to open test output", err)
 	}
+	defer f.Close()
 	img, _, err := image.Decode(f)
 	if err != nil {
 		t.Fatal("unable to open test output", err)
 	}
 	if img.Bounds().Dx() != 800 || img.Bounds().Dy() != 600 {
 		t.Error("unexpected size of output image: ", img.Bounds())
+	}
+}
+
+func TestSRS(t *testing.T) {
+	m := New()
+	// default mapnil srs
+	if srs := m.SRS(); srs != "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" {
+		t.Fatal("unexpected default srs:", srs)
+	}
+	if err := m.Load("test/map.xml"); err != nil {
+		t.Fatal(err)
+	}
+	if m.SRS() != "+init=epsg:4326" {
+		t.Error("unexpeced srs: ", m.SRS())
+	}
+	m.SetSRS("+init=epsg:3857")
+	if m.SRS() != "+init=epsg:3857" {
+		t.Error("unexpeced srs: ", m.SRS())
+	}
+}
+
+func TestBackgroundColor(t *testing.T) {
+	m := New()
+	c := m.BackgroundColor()
+	if c.R != 0 || c.R != 0 || c.B != 0 || c.A != 0 {
+		t.Error("default background not transparent", c)
+	}
+
+	m.SetBackgroundColor(color.NRGBA{100, 50, 200, 150})
+	c = m.BackgroundColor()
+	if c.R != 100 || c.G != 50 || c.B != 200 || c.A != 150 {
+		t.Error("background not set", c)
+	}
+	img, err := m.RenderImage(RenderOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bg := color.NRGBAModel.Convert(img.At(0, 0)).(color.NRGBA)
+	if bg.R != 98 || bg.G != 49 || bg.B != 198 || bg.A != 150 {
+		t.Error("background in rendered image not set", bg)
+	}
+}
+
+func TestRender(t *testing.T) {
+	m := New()
+	if err := m.Load("test/map.xml"); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatal("unable to create temp dir")
+	}
+	defer os.RemoveAll(out)
+
+	fname := filepath.Join(out, "out.png")
+
+	if err := m.RenderToFile(RenderOpts{}, fname); err != nil {
+		t.Fatal(err)
+	}
+	bufFile, err := ioutil.ReadFile(fname)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bufDirect, err := m.Render(RenderOpts{Format: "png24"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if bytes.Compare(bufDirect, bufFile) != 0 {
+		t.Error("RenderFile and Render output differs")
 	}
 }
 
@@ -157,7 +228,7 @@ func TestEncode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, img.Bounds(), imgGo.Bounds())
+	assertEqual(t, img.Bounds(), imgGo.Bounds())
 
 	b, err := Encode(img, "png")
 	if err != nil {
@@ -174,14 +245,32 @@ func TestEncode(t *testing.T) {
 }
 
 func assertImageEqual(t *testing.T, a, b image.Image) {
-	assert.Equal(t, a.Bounds(), b.Bounds())
+	assertEqual(t, a.Bounds(), b.Bounds())
 	for y := 0; y < a.Bounds().Max.Y; y++ {
 		for x := 0; x < a.Bounds().Max.X; x++ {
-			assert.Equal(t,
+			assertEqual(t,
 				color.RGBAModel.Convert(a.At(x, y)),
 				color.RGBAModel.Convert(b.At(x, y)),
 			)
 		}
+	}
+}
+
+func assertEqual(t *testing.T, a interface{}, b interface{}) {
+	if !reflect.DeepEqual(a, b) {
+		for i := 0; ; i++ {
+			i += 1
+			pc, file, line, ok := runtime.Caller(i)
+			if !ok {
+				break
+			}
+			if f := runtime.FuncForPC(pc); f != nil && strings.HasPrefix(f.Name(), "assert") {
+				continue
+			}
+			t.Fatalf("%v != %v at: %s:%d", a, b, filepath.Base(file), line)
+			return
+		}
+		t.Fatalf("%v != %v", a, b)
 	}
 }
 
@@ -198,20 +287,6 @@ func BenchmarkEncodeGo(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		buf := &bytes.Buffer{}
 		if err := png.Encode(buf, img); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkEncodeGoHexTree(b *testing.B) {
-	img := prepareImg(b)
-
-	for i := 0; i < b.N; i++ {
-		ht := hextree.New(256)
-		ht.Fill(img)
-		p := ht.QuantizeImage(img)
-		buf := &bytes.Buffer{}
-		if err := png.Encode(buf, p); err != nil {
 			b.Fatal(err)
 		}
 	}
