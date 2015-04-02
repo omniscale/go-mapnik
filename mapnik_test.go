@@ -114,8 +114,9 @@ func TestRender(t *testing.T) {
 	defer os.RemoveAll(out)
 
 	fname := filepath.Join(out, "out.png")
+	opts := RenderOpts{Format: "png24"}
 
-	if err := m.RenderToFile(RenderOpts{}, fname); err != nil {
+	if err := m.RenderToFile(opts, fname); err != nil {
 		t.Fatal(err)
 	}
 	bufFile, err := ioutil.ReadFile(fname)
@@ -123,7 +124,7 @@ func TestRender(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bufDirect, err := m.Render(RenderOpts{Format: "png24"})
+	bufDirect, err := m.Render(opts)
 	if err != nil {
 		t.Fatal(err)
 	}

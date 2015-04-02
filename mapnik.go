@@ -219,7 +219,7 @@ func (m *Map) Render(opts RenderOpts) ([]byte, error) {
 	if scaleFactor == 0.0 {
 		scaleFactor = 1.0
 	}
-	i := C.mapnik_map_render_to_image_scale(m.m, C.double(opts.Scale), C.double(scaleFactor))
+	i := C.mapnik_map_render_to_image(m.m, C.double(opts.Scale), C.double(scaleFactor))
 	if i == nil {
 		return nil, m.lastError()
 	}
@@ -246,7 +246,7 @@ func (m *Map) RenderImage(opts RenderOpts) (*image.NRGBA, error) {
 	if scaleFactor == 0.0 {
 		scaleFactor = 1.0
 	}
-	i := C.mapnik_map_render_to_image_scale(m.m, C.double(opts.Scale), C.double(scaleFactor))
+	i := C.mapnik_map_render_to_image(m.m, C.double(opts.Scale), C.double(scaleFactor))
 	if i == nil {
 		return nil, m.lastError()
 	}
@@ -269,7 +269,14 @@ func (m *Map) RenderToFile(opts RenderOpts, path string) error {
 	}
 	cs := C.CString(path)
 	defer C.free(unsafe.Pointer(cs))
-	if C.mapnik_map_render_to_file_scale(m.m, cs, C.double(opts.Scale), C.double(scaleFactor)) != 0 {
+	var format *C.char
+	if opts.Format != "" {
+		format = C.CString(opts.Format)
+	} else {
+		format = C.CString("png256")
+	}
+	defer C.free(unsafe.Pointer(format))
+	if C.mapnik_map_render_to_file(m.m, cs, C.double(opts.Scale), C.double(scaleFactor), format) != 0 {
 		return m.lastError()
 	}
 	return nil

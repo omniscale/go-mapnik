@@ -70,7 +70,7 @@ MAPNIKCAPICALL int mapnik_map_load(mapnik_map_t * m, const char* stylesheet);
 
 MAPNIKCAPICALL int mapnik_map_zoom_all(mapnik_map_t * m);
 
-MAPNIKCAPICALL int mapnik_map_render_to_file_scale(mapnik_map_t * m, const char* filepath,  double scale, double scale_factor);
+MAPNIKCAPICALL int mapnik_map_render_to_file(mapnik_map_t * m, const char* filepath, double scale, double scale_factor, const char *format);
 
 MAPNIKCAPICALL void mapnik_map_resize(mapnik_map_t * m, unsigned int width, unsigned int height);
 
@@ -78,9 +78,7 @@ MAPNIKCAPICALL void mapnik_map_set_buffer_size(mapnik_map_t * m, int buffer_size
 
 MAPNIKCAPICALL void mapnik_map_zoom_to_box(mapnik_map_t * m, mapnik_bbox_t * b);
 
-MAPNIKCAPICALL mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m);
-
-MAPNIKCAPICALL mapnik_image_t * mapnik_map_render_to_image_scale(mapnik_map_t * m, double scale, double scale_factor);
+MAPNIKCAPICALL mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, double scale_factor);
 
 
 MAPNIKCAPICALL int mapnik_map_layer_count(mapnik_map_t * m);

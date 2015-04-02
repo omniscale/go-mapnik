@@ -216,11 +216,7 @@ void mapnik_image_free(mapnik_image_t * i) {
     }
 }
 
-mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m) {
-    return mapnik_map_render_to_image_scale(m, 0.0, 1.0);
-}
-
-mapnik_image_t * mapnik_map_render_to_image_scale(mapnik_map_t * m, double scale, double scale_factor) {
+mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, double scale_factor) {
     mapnik_map_reset_last_error(m);
     mapnik::image_32 * im = new mapnik::image_32(m->m->width(), m->m->height());
     if (m && m->m) {
@@ -242,7 +238,7 @@ mapnik_image_t * mapnik_map_render_to_image_scale(mapnik_map_t * m, double scale
     return i;
 }
 
-int mapnik_map_render_to_file_scale(mapnik_map_t * m, const char* filepath, double scale, double scale_factor) {
+int mapnik_map_render_to_file(mapnik_map_t * m, const char* filepath, double scale, double scale_factor, const char *format) {
     mapnik_map_reset_last_error(m);
     if (m && m->m) {
         try {
@@ -253,7 +249,7 @@ int mapnik_map_render_to_file_scale(mapnik_map_t * m, const char* filepath, doub
             } else {
                 ren.apply();
             }
-            mapnik::save_to_file(buf, filepath);
+            mapnik::save_to_file(buf, filepath, format);
         } catch (std::exception const& ex) {
             m->err = new std::string(ex.what());
             return -1;
