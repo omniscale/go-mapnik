@@ -259,7 +259,6 @@ int mapnik_map_render_to_file(mapnik_map_t * m, const char* filepath, double sca
     return -1;
 }
 
-
 void mapnik_image_blob_free(mapnik_image_blob_t * b) {
     if (b) {
         if (b->ptr) {
@@ -267,10 +266,6 @@ void mapnik_image_blob_free(mapnik_image_blob_t * b) {
         }
         delete b;
     }
-}
-
-mapnik_image_blob_t * mapnik_image_to_png_blob(mapnik_image_t * i) {
-    return mapnik_image_to_blob(i, "png256");
 }
 
 mapnik_image_blob_t * mapnik_image_to_blob(mapnik_image_t * i, const char *format) {
