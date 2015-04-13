@@ -82,7 +82,7 @@ func TestSRS(t *testing.T) {
 func TestBackgroundColor(t *testing.T) {
 	m := New()
 	c := m.BackgroundColor()
-	if c.R != 0 || c.R != 0 || c.B != 0 || c.A != 0 {
+	if c.R != 0 || c.G != 0 || c.B != 0 || c.A != 0 {
 		t.Error("default background not transparent", c)
 	}
 
