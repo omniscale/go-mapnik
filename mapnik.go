@@ -319,6 +319,7 @@ func (m *Map) SetBufferSize(s int) {
 	C.mapnik_map_set_buffer_size(m.m, C.int(s))
 }
 
+// Encode image.Image with Mapniks image encoder.
 func Encode(img image.Image, format string) ([]byte, error) {
 	var i *C.mapnik_image_t
 	switch img := img.(type) {
