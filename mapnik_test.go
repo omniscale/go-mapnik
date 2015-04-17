@@ -61,6 +61,18 @@ func TestRenderFile(t *testing.T) {
 	}
 }
 
+func TestRenderInvalidFormat(t *testing.T) {
+	m := New()
+	if err := m.Load("test/map.xml"); err != nil {
+		t.Fatal(err)
+	}
+	m.ZoomAll()
+
+	if _, err := m.Render(RenderOpts{Format: "invalidformat"}); err == nil {
+		t.Fatal("invalid format did not return an error")
+	}
+}
+
 func TestSRS(t *testing.T) {
 	m := New()
 	// default mapnil srs
@@ -243,6 +255,14 @@ func TestEncode(t *testing.T) {
 
 	assertImageEqual(t, img, imgMapnik)
 	assertImageEqual(t, imgGo, imgMapnik)
+}
+
+func TestEncodeInvalidFormat(t *testing.T) {
+	img := prepareImg(t)
+
+	if _, err := Encode(img, "invalid"); err == nil {
+		t.Fatal("invalid format did not return an error")
+	}
 }
 
 func assertImageEqual(t *testing.T, a, b image.Image) {

@@ -35,6 +35,8 @@ MAPNIKCAPICALL void mapnik_bbox_free(mapnik_bbox_t * b);
 MAPNIKCAPICALL typedef struct _mapnik_image_t mapnik_image_t;
 MAPNIKCAPICALL void mapnik_image_free(mapnik_image_t * i);
 
+MAPNIKCAPICALL const char * mapnik_image_last_error(mapnik_image_t * i);
+
 typedef struct _mapnik_image_blob_t {
     char *ptr;
     unsigned int len;

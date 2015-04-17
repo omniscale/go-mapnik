@@ -205,15 +205,33 @@ void mapnik_map_zoom_to_box(mapnik_map_t * m, mapnik_bbox_t * b) {
 
 struct _mapnik_image_t {
     mapnik::image_32 *i;
+    std::string * err;
 };
+
+inline void mapnik_image_reset_last_error(mapnik_image_t *i) {
+    if (i && i->err) {
+        delete i->err;
+        i->err = NULL;
+    }
+}
 
 void mapnik_image_free(mapnik_image_t * i) {
     if (i) {
         if (i->i) {
             delete i->i;
         }
+        if (i->err) {
+            delete i->err;
+        }
         delete i;
     }
+}
+
+const char *mapnik_image_last_error(mapnik_image_t *i) {
+    if (i && i->err) {
+        return i->err->c_str();
+    }
+    return NULL;
 }
 
 mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, double scale_factor) {
@@ -235,6 +253,7 @@ mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, doub
     }
     mapnik_image_t * i = new mapnik_image_t;
     i->i = im;
+    i->err = NULL;
     return i;
 }
 
@@ -269,14 +288,21 @@ void mapnik_image_blob_free(mapnik_image_blob_t * b) {
 }
 
 mapnik_image_blob_t * mapnik_image_to_blob(mapnik_image_t * i, const char *format) {
+    mapnik_image_reset_last_error(i);
     mapnik_image_blob_t * blob = new mapnik_image_blob_t;
     blob->ptr = NULL;
     blob->len = 0;
     if (i && i->i) {
-        std::string s = save_to_string(*(i->i), format);
-        blob->len = s.length();
-        blob->ptr = new char[blob->len];
-        memcpy(blob->ptr, s.c_str(), blob->len);
+        try {
+            std::string s = save_to_string(*(i->i), format);
+            blob->len = s.length();
+            blob->ptr = new char[blob->len];
+            memcpy(blob->ptr, s.c_str(), blob->len);
+        } catch (std::exception const& ex) {
+            i->err = new std::string(ex.what());
+            delete blob;
+            return NULL;
+        }
     }
     return blob;
 }
@@ -292,6 +318,7 @@ const uint8_t * mapnik_image_to_raw(mapnik_image_t * i, size_t * size) {
 mapnik_image_t * mapnik_image_from_raw(const uint8_t * raw, int width, int height) {
     mapnik_image_t * img = new mapnik_image_t;
     img->i = new mapnik::image_32(width, height);
+    img->err = NULL;
     memcpy(img->i->raw_data(), raw, width * height * 4);
     return img;
 }

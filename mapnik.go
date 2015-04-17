@@ -266,6 +266,9 @@ func (m *Map) Render(opts RenderOpts) ([]byte, error) {
 		format = C.CString("png256")
 	}
 	b := C.mapnik_image_to_blob(i, format)
+	if b == nil {
+		return nil, errors.New("mapnik: " + C.GoString(C.mapnik_image_last_error(i)))
+	}
 	C.free(unsafe.Pointer(format))
 	defer C.mapnik_image_blob_free(b)
 	return C.GoBytes(unsafe.Pointer(b.ptr), C.int(b.len)), nil
@@ -346,6 +349,9 @@ func Encode(img image.Image, format string) ([]byte, error) {
 
 	cformat := C.CString(format)
 	b := C.mapnik_image_to_blob(i, cformat)
+	if b == nil {
+		return nil, errors.New("mapnik: " + C.GoString(C.mapnik_image_last_error(i)))
+	}
 	C.free(unsafe.Pointer(cformat))
 	defer C.mapnik_image_blob_free(b)
 	return C.GoBytes(unsafe.Pointer(b.ptr), C.int(b.len)), nil
