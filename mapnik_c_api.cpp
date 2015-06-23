@@ -13,6 +13,19 @@
 #include <mapnik/font_engine_freetype.hpp>
 
 
+#include "mapnik3x_compatibility.hpp"
+
+// vector output api
+#include "vector_tile_compression.hpp"
+#include "vector_tile_processor.hpp"
+#include "vector_tile_backend_pbf.hpp"
+#include "vector_tile_util.hpp"
+#include "vector_tile_projection.hpp"
+
+// vector input api
+#include "vector_tile_datasource.hpp"
+#include "vector_tile.pb.h"
+
 #if MAPNIK_VERSION < 300000
 #define MAPNIK_2
 #endif
@@ -432,6 +445,117 @@ void mapnik_map_reset_maximum_extent(mapnik_map_t * m) {
         m->m->reset_maximum_extent();
     }
 }
+
+
+
+MAPNIKCAPICALL void mapnik_vt_write(mapnik_map_t * m, const unsigned x, const unsigned y, const unsigned z, const char * fname) {
+    typedef mapnik::vector_tile_impl::backend_pbf backend_type;
+    typedef mapnik::vector_tile_impl::processor<backend_type> renderer_type;
+    typedef vector_tile::Tile tile_type;
+    tile_type tile;
+    backend_type backend(tile,16);
+
+
+    double minx,miny,maxx,maxy;
+    mapnik::vector_tile_impl::spherical_mercator merc(256);
+    merc.xyz(x, y, z, minx, miny, maxx, maxy);
+    mapnik::box2d<double> bbox;
+    bbox.init(minx,miny,maxx,maxy);
+
+    std::cerr << x << " " << y << " " << z << std::endl;
+    std::cerr << bbox << std::endl;
+
+    m->m->zoom_to_box(bbox);
+
+    mapnik::request m_req(256, 256, bbox);
+    renderer_type ren(backend, *(m->m), m_req);
+    ren.apply();
+    std::string buffer;
+
+    tile.SerializeToString(&buffer);
+    std::ofstream out(fname);
+    out << buffer;
+    out.close();
+}
+
+
+MAPNIKCAPICALL void mapnik_vt_load_ds(mapnik_map_t * m, const unsigned x, const unsigned y, const unsigned z, const char * fname) {
+    vector_tile::Tile_Layer vtile;
+
+    std::string buffer;
+    std::ifstream in(fname);
+    in >> buffer;
+    in.close();
+
+    vtile.ParseFromString(buffer);
+
+    MAPNIK_SHARED_PTR<mapnik::vector_tile_impl::tile_datasource> ds = MAPNIK_MAKE_SHARED<
+                                    mapnik::vector_tile_impl::tile_datasource>(
+                                        vtile, x, y, z, 256);
+
+    double minx,miny,maxx,maxy;
+    mapnik::vector_tile_impl::spherical_mercator merc(256);
+    merc.xyz(x, y, z, minx, miny, maxx, maxy);
+    mapnik::box2d<double> bbox;
+    bbox.init(minx,miny,maxx,maxy);
+
+    ds->set_envelope(bbox);
+    mapnik::layer_descriptor lay_desc = ds->get_descriptor();
+    BOOST_FOREACH(mapnik::attribute_descriptor const& desc, lay_desc.get_descriptors())
+    {
+        std::cerr << "name:" << desc.get_name() << std::endl;
+    }
+
+    // lyr2.set_datasource(ds);
+    // lyr2.add_style("style1");
+    // map2.MAPNIK_ADD_LAYER(lyr2);
+    // mapnik::load_map(map2,"test/data/style.xml");
+    // //std::clog << mapnik::save_map_to_string(map2) << "\n";
+    // map2.zoom_to_box(bbox);
+    // mapnik::image_32 im(map2.width(),map2.height());
+    // mapnik::agg_renderer<mapnik::image_32> ren2(map2,im);
+    // ren2.apply();
+    // if (!mapnik::util::exists("test/fixtures/expected-1.png")) {
+    //     mapnik::save_to_file(im.data(),"test/fixtures/expected-1.png","png32");
+    // }
+    // unsigned diff = testing::compare_images(im.data(),"test/fixtures/expected-1.png");
+    // CHECK(0 == diff);
+    // if (diff > 0) {
+    //     mapnik::save_to_file(im.data(),"test/fixtures/actual-1.png","png32");
+    // }
+
+
+
+
+    // typedef mapnik::vector_tile_impl::backend_pbf backend_type;
+    // typedef mapnik::vector_tile_impl::processor<backend_type> renderer_type;
+    // typedef vector_tile::Tile tile_type;
+    // tile_type tile;
+    // backend_type backend(tile,16);
+
+
+    // double minx,miny,maxx,maxy;
+    // mapnik::vector_tile_impl::spherical_mercator merc(256);
+    // merc.xyz(x, y, z, minx, miny, maxx, maxy);
+    // mapnik::box2d<double> bbox;
+    // bbox.init(minx,miny,maxx,maxy);
+
+    // std::cerr << x << " " << y << " " << z << std::endl;
+    // std::cerr << bbox << std::endl;
+
+    // m->m->zoom_to_box(bbox);
+
+    // mapnik::request m_req(256, 256, bbox);
+    // renderer_type ren(backend, *(m->m), m_req);
+    // ren.apply();
+    // std::string buffer;
+
+    // tile.SerializeToString(&buffer);
+    // std::ofstream out(fname);
+    // out << buffer;
+    // out.close();
+}
+
 
 
 #ifdef __cplusplus

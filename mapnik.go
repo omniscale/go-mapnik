@@ -3,8 +3,11 @@ package mapnik
 
 //go:generate bash ./configure.bash
 
+// #cgo CPPFLAGS: -I/Users/olt/dev/vectortiles/mapnik-vector-tile/src -I/usr/local/include -I/usr/local/include/mapnik/agg -I/usr/local/Cellar/gdal/1.11.1_3/include -I/usr/local/Cellar/postgresql/9.4.0/include -I/usr/local/Cellar/libtiff/4.0.3/include -I/usr/local/Cellar/libpng/1.6.16/include -I/usr/local/Cellar/proj/4.8.0/include -I/usr/local/Cellar/jpeg/8d/include -I/usr/local/Cellar/libxml2/2.9.2/include/libxml2 -I/usr/local/Cellar/freetype/2.5.5/include/freetype2 -I/usr/local/Cellar/icu4c/54.1/include -I/usr/local/Cellar/boost/1.57.0/include -I/usr/include -I/usr/local/Cellar/libpng/1.6.16/include/libpng16 -I/usr/local/Cellar/fontconfig/2.11.1/include -I/usr/local/Cellar/freetype/2.5.3_1/include/freetype2 -I/usr/local/Cellar/pixman/0.32.6/include/pixman-1 -I/usr/local/Cellar/glib/2.42.1/include/glib-2.0 -I/usr/local/Cellar/glib/2.42.1/lib/glib-2.0/include -I/usr/local/opt/gettext/include -I/usr/local/Cellar/cairo/1.14.0/include/cairo -DHAVE_JPEG -DMAPNIK_USE_PROJ4 -DHAVE_PNG -DHAVE_TIFF -DBIGINT -DDARWIN -DMAPNIK_THREADSAFE -DBOOST_SPIRIT_USE_PHOENIX_V3=1 -DNDEBUG -DHAVE_CAIRO -DHAVE_LIBXML2 -Wno-c++11-narrowing -ansi -Wall -ftemplate-depth-300 -O3 -fno-strict-aliasing -finline-functions -Wno-inline -Wno-parentheses -Wno-char-subscripts -D_THREAD_SAFE -I/usr/local/Cellar/protobuf/2.6.1/include
+// #cgo LDFLAGS: -L/usr/local/lib -lmapnik -L/usr/local/Cellar/gdal/1.11.1_3/lib -L/usr/local/Cellar/postgresql/9.4.0/lib -L/usr/local/Cellar/libtiff/4.0.3/lib -L/usr/local/Cellar/libpng/1.6.16/lib -L/usr/local/Cellar/proj/4.8.0/lib -L/usr/local/Cellar/jpeg/8d/lib -L/usr/local/Cellar/freetype/2.5.5/lib -L/usr/local/Cellar/icu4c/54.1/lib -L/usr/local/Cellar/boost/1.57.0/lib -L/usr/lib -lfreetype -lz -licuuc -lboost_filesystem-mt -lboost_system-mt -lboost_regex-mt -lproj -lpng -ljpeg -ltiff -lxml2 -lboost_thread-mt -lcairo -lboost_system -L/usr/local/Cellar/protobuf/2.6.1/lib  -lprotobuf-lite
 // #include <stdlib.h>
 // #include "mapnik_c_api.h"
+// #include "mapnik_vtiles_c_api.h"
 import "C"
 
 import (
@@ -375,4 +378,13 @@ func Encode(img image.Image, format string) ([]byte, error) {
 	C.free(unsafe.Pointer(cformat))
 	defer C.mapnik_image_blob_free(b)
 	return C.GoBytes(unsafe.Pointer(b.ptr), C.int(b.len)), nil
+}
+
+func RenderVectorTile(m *Map, x, y, z int, fnameBase string) {
+	fname := C.CString(fnameBase + fmt.Sprintf("-%d-%d-%d.pbf", z, x, y))
+	defer C.free(unsafe.Pointer(fname))
+
+	C.mapnik_vt_write(m.m, C.uint(x), C.uint(y), C.uint(z), fname)
+	C.mapnik_vt_load_ds(m.m, C.uint(x), C.uint(y), C.uint(z), fname)
+
 }

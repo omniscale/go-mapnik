@@ -323,3 +323,15 @@ func BenchmarkEncodeGo(b *testing.B) {
 		}
 	}
 }
+
+func TestRenderVectorTile(t *testing.T) {
+	m := New()
+	if err := m.Load("test/merc.xml"); err != nil {
+		t.Fatal(err)
+	}
+
+	RenderVectorTile(m, 0, 0, 1, "/tmp/vtile")
+	RenderVectorTile(m, 1, 0, 1, "/tmp/vtile")
+	RenderVectorTile(m, 1, 1, 1, "/tmp/vtile")
+	RenderVectorTile(m, 0, 1, 1, "/tmp/vtile")
+}
