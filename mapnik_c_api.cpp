@@ -7,10 +7,20 @@
 #include <mapnik/layer.hpp>
 #include <mapnik/color.hpp>
 #include <mapnik/image_util.hpp>
+#include <mapnik/projection.hpp>
+#include <mapnik/scale_denominator.hpp>
 #include <mapnik/agg_renderer.hpp>
 #include <mapnik/load_map.hpp>
 #include <mapnik/datasource_cache.hpp>
 #include <mapnik/font_engine_freetype.hpp>
+
+#include "vector_tile.pb.cc"
+#include "vector_tile_compression.hpp"
+#include "vector_tile_datasource.hpp"
+#include "vector_tile_datasource_pbf.hpp"
+#include "vector_tile_compression.hpp"
+#include "vector_tile_backend_pbf.hpp"
+#include <protozero/pbf_reader.hpp>
 
 
 #if MAPNIK_VERSION < 300000
@@ -23,8 +33,6 @@
 
 #include "mapnik_c_api.h"
 
-#include <stdlib.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -35,6 +43,10 @@ const char *mapnik_version_string = MAPNIK_VERSION_STRING;
 const int mapnik_version_major = MAPNIK_MAJOR_VERSION;
 const int mapnik_version_minor = MAPNIK_MINOR_VERSION;
 const int mapnik_version_patch = MAPNIK_PATCH_VERSION;
+const int MAPNIK_NONE = 0;
+const int MAPNIK_DEBUG = 1;
+const int MAPNIK_WARN = 2;
+const int MAPNIK_ERROR = 3;
 
 #ifdef MAPNIK_2
     typedef mapnik::image_32 mapnik_rgba_image;
@@ -104,14 +116,25 @@ void mapnik_logging_set_severity(int level) {
     mapnik::logger::instance().set_severity(severity);
 }
 
+
+struct _mapnik_vector_data_t {
+    std::string * data_string;
+    int len;
+    size_t x;
+    size_t y;
+    size_t z;
+};
+
 struct _mapnik_map_t {
     mapnik::Map * m;
+    mapnik_vector_data_t * vector_data;
     std::string * err;
 };
 
 mapnik_map_t * mapnik_map(unsigned width, unsigned height) {
     mapnik_map_t * map = new mapnik_map_t;
     map->m = new mapnik::Map(width, height);
+    map->vector_data = NULL;
     map->err = NULL;
     return map;
 }
@@ -120,6 +143,9 @@ void mapnik_map_free(mapnik_map_t * m) {
     if (m)  {
         if (m->m) {
             delete m->m;
+        }
+        if (m->vector_data) {
+             mapnik_vector_data_free(m->vector_data);
         }
         if (m->err) {
             delete m->err;
@@ -257,6 +283,105 @@ const char *mapnik_image_last_error(mapnik_image_t *i) {
     return NULL;
 }
 
+void process_vector_data(mapnik::agg_renderer<mapnik_rgba_image> & ren, mapnik_map_t * m, mapnik_vector_data_t * data){
+    mapnik::Map const& map_in = *m->m;
+    mapnik::vector_tile_impl::spherical_mercator merc(map_in.width());
+
+    double minx,miny,maxx,maxy;
+
+    mapnik_vector_data_t vd = *data;
+
+    merc.xyz(vd.x,vd.y,vd.z,minx,miny,maxx,maxy);
+
+    mapnik::box2d<double> map_extent(minx,miny,maxx,maxy);
+
+    mapnik::request m_req(map_in.width(),map_in.height(),map_extent);
+
+    m_req.set_buffer_size(map_in.buffer_size());
+
+    mapnik::projection map_proj(map_in.srs(),true);
+
+    double scale_denom = map_in.scale_denominator();
+    if (scale_denom <= 0.0)
+    {
+        scale_denom = mapnik::scale_denominator(m_req.scale(),map_proj.is_geographic());
+    }
+    scale_denom *= map_in.scale();
+    std::vector<mapnik::layer> layers = map_in.layers();
+
+    mapnik_rgba_image buf(m->m->width(), m->m->height());
+
+    using layer_list_type = std::vector<protozero::pbf_reader>;
+    std::map<std::string,layer_list_type> pbf_layers;
+
+    std::string dsp(*(data->data_string));
+
+    protozero::pbf_reader item(dsp.c_str(),vd.len);
+    while (item.next(3)) {
+        protozero::pbf_reader layer_msg = item.get_message();
+        protozero::pbf_reader layer_og(layer_msg);
+
+        std::string layer_name;
+        while (layer_msg.next(1)) {
+            layer_name = layer_msg.get_string();
+        }
+
+        if (!layer_name.empty())
+        {
+
+            auto itr = pbf_layers.find(layer_name);
+            if (itr == pbf_layers.end())
+            {
+                pbf_layers.emplace(layer_name,layer_list_type{std::move(layer_og)});
+            }
+            else
+            {
+                itr->second.push_back(std::move(layer_og));
+            }
+        }
+    }
+        
+    for (auto lyr : layers)
+    {
+        if (lyr.visible(scale_denom))
+        {
+            auto itr = pbf_layers.find(lyr.name());
+            if (itr != pbf_layers.end())
+            {
+                for (auto const& pb : itr->second)
+                {   
+                    mapnik::layer lyr_copy(lyr);
+                    lyr.set_srs(map_in.srs());
+                    
+                    protozero::pbf_reader layer_og(pb);
+                    auto ds = std::make_shared<
+                                    mapnik::vector_tile_impl::tile_datasource_pbf>(
+                                        layer_og,
+                                        vd.x,
+                                        vd.y,
+                                        vd.z,
+                                        256 
+                                        );
+
+                    ds->set_envelope(m_req.get_buffered_extent());
+                    lyr_copy.set_datasource(ds);
+
+                    std::set<std::string> names;
+                    ren.apply_to_layer(lyr_copy,
+                                       ren,
+                                       map_proj,
+                                       m_req.scale(),
+                                       scale_denom,
+                                       map_in.width(),
+                                       map_in.height(),
+                                       m_req.get_buffered_extent(),
+                                       map_in.buffer_size(),
+                                       names);
+                }
+            }
+        }
+    }
+}
 mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, double scale_factor) {
     mapnik_map_reset_last_error(m);
     mapnik_rgba_image * im = new mapnik_rgba_image(m->m->width(), m->m->height());
@@ -267,6 +392,10 @@ mapnik_image_t * mapnik_map_render_to_image(mapnik_map_t * m, double scale, doub
                 ren.apply(scale);
             } else {
                 ren.apply();
+            }
+            
+            if (m->vector_data != NULL ){
+                process_vector_data(ren, m, m->vector_data);
             }
         } catch (std::exception const& ex) {
             delete im;
@@ -290,6 +419,10 @@ int mapnik_map_render_to_file(mapnik_map_t * m, const char* filepath, double sca
                 ren.apply(scale);
             } else {
                 ren.apply();
+            }
+
+            if (m->vector_data != NULL ){
+                process_vector_data(ren, m, m->vector_data);
             }
             mapnik::save_to_file(buf, filepath, format);
         } catch (std::exception const& ex) {
@@ -432,6 +565,35 @@ void mapnik_map_reset_maximum_extent(mapnik_map_t * m) {
     }
 }
 
+
+mapnik_vector_data_t * mapnik_vector_data(const char * data, int len, int x, int y, int z) {
+    mapnik_vector_data_t * vd = new mapnik_vector_data_t;
+    vd->data_string = new std::string(data, len);
+    vd->len = len;
+    vd->x = x;
+    vd->y = y;
+    vd->z = z;
+
+    return vd;
+}
+
+void mapnik_map_set_vector_data(mapnik_map_t * m, mapnik_vector_data_t * vd) {
+    if (m->vector_data){
+        mapnik_vector_data_free(m->vector_data);
+    }
+
+    m->vector_data = vd;
+}
+
+void mapnik_vector_data_free(mapnik_vector_data_t * vd) {
+    if (vd){
+        if(vd->data_string != NULL){
+            delete vd->data_string;
+        }
+
+        delete vd;
+    }
+}
 
 #ifdef __cplusplus
 }

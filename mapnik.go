@@ -3,7 +3,6 @@ package mapnik
 
 //go:generate bash ./configure.bash
 
-// #include <stdlib.h>
 // #include "mapnik_c_api.h"
 import "C"
 
@@ -75,6 +74,23 @@ type Map struct {
 	layerStatus []bool
 }
 
+type MapnikVectorData struct {
+	data *C.char
+	mvd  *C.struct__mapnik_vector_data_t
+}
+
+func NewVectorData(data []byte, x, y, z uint64) *MapnikVectorData {
+	mvd := &MapnikVectorData{data: C.CString(string(data))}
+	mvd.mvd = C.mapnik_vector_data(mvd.data, C.int(len(data)), C.int(x), C.int(y), C.int(z))
+
+	return mvd
+}
+
+func (mvd *MapnikVectorData) Free() {
+	C.free(unsafe.Pointer(mvd.data))
+	mvd.data = nil
+}
+
 // New initializes a new Map.
 func New() *Map {
 	return &Map{
@@ -82,6 +98,10 @@ func New() *Map {
 		width:  800,
 		height: 600,
 	}
+}
+
+func (m *Map) SetVectorData(vd *MapnikVectorData) {
+	C.mapnik_map_set_vector_data(m.m, vd.mvd)
 }
 
 func (m *Map) lastError() error {

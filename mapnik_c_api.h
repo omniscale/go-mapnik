@@ -1,4 +1,3 @@
-#include "stdint.h"
 #ifndef MAPNIK_C_API_H
 #define MAPNIK_C_API_H
 
@@ -13,6 +12,9 @@ extern "C"
 {
 #endif
 
+#include "stdint.h"
+#include "stdlib.h"
+
 extern const int mapnik_version;
 extern const char *mapnik_version_string;
 extern const int mapnik_version_major;
@@ -22,10 +24,10 @@ extern const int mapnik_version_patch;
 MAPNIKCAPICALL int mapnik_register_datasources(const char* path);
 MAPNIKCAPICALL int mapnik_register_fonts(const char* path);
 
-const int MAPNIK_NONE = 0;
-const int MAPNIK_DEBUG = 1;
-const int MAPNIK_WARN = 2;
-const int MAPNIK_ERROR = 3;
+extern const int MAPNIK_NONE;
+extern const int MAPNIK_DEBUG;
+extern const int MAPNIK_WARN;
+extern const int MAPNIK_ERROR;
 
 MAPNIKCAPICALL void mapnik_logging_set_severity(int);
 
@@ -60,16 +62,16 @@ typedef struct _mapnik_map_t mapnik_map_t;
 MAPNIKCAPICALL mapnik_map_t * mapnik_map( unsigned int width, unsigned int height );
 MAPNIKCAPICALL void mapnik_map_free(mapnik_map_t * m);
 
-MAPNIKCAPICALL const char * mapnik_map_last_error(mapnik_map_t * m);
 
+MAPNIKCAPICALL const char * mapnik_map_last_error(mapnik_map_t * m);
 MAPNIKCAPICALL int mapnik_map_load(mapnik_map_t * m, const char* stylesheet);
 
 MAPNIKCAPICALL const char * mapnik_map_get_srs(mapnik_map_t * m);
 MAPNIKCAPICALL int mapnik_map_set_srs(mapnik_map_t * m, const char* srs);
+
 MAPNIKCAPICALL void mapnik_map_resize(mapnik_map_t * m, unsigned int width, unsigned int height);
 MAPNIKCAPICALL double mapnik_map_get_scale_denominator(mapnik_map_t * m);
 MAPNIKCAPICALL void mapnik_map_set_buffer_size(mapnik_map_t * m, int buffer_size);
-
 MAPNIKCAPICALL int mapnik_map_background(mapnik_map_t * m, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a);
 MAPNIKCAPICALL void mapnik_map_set_background(mapnik_map_t * m, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
@@ -86,6 +88,14 @@ MAPNIKCAPICALL int mapnik_map_layer_count(mapnik_map_t * m);
 MAPNIKCAPICALL const char * mapnik_map_layer_name(mapnik_map_t * m, size_t idx);
 MAPNIKCAPICALL int mapnik_map_layer_is_active(mapnik_map_t * m, size_t idx);
 MAPNIKCAPICALL void mapnik_map_layer_set_active(mapnik_map_t * m, size_t idx, int active);
+
+
+//Vector data
+typedef struct _mapnik_vector_data_t mapnik_vector_data_t;
+
+MAPNIKCAPICALL mapnik_vector_data_t * mapnik_vector_data(const char * data, int len, int x, int y, int z);
+MAPNIKCAPICALL void mapnik_map_set_vector_data(mapnik_map_t * m, mapnik_vector_data_t * vd);
+MAPNIKCAPICALL void mapnik_vector_data_free(mapnik_vector_data_t * vd);
 
 #ifdef __cplusplus
 }
