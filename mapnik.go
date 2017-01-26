@@ -83,7 +83,7 @@ func init() {
 	Version.Major = int(C.mapnik_version_major)
 	Version.Minor = int(C.mapnik_version_minor)
 	Version.Patch = int(C.mapnik_version_patch)
-	Version.String = C.GoString(C.mapnik_version_string)
+	Version.String = fmt.Sprintf("%d.%d.%d", Version.Major, Version.Minor, Version.Patch)
 }
 
 // Map base type

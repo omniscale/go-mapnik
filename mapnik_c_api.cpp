@@ -30,12 +30,6 @@ extern "C"
 {
 #endif
 
-const int mapnik_version = MAPNIK_VERSION;
-const char *mapnik_version_string = MAPNIK_VERSION_STRING;
-const int mapnik_version_major = MAPNIK_MAJOR_VERSION;
-const int mapnik_version_minor = MAPNIK_MINOR_VERSION;
-const int mapnik_version_patch = MAPNIK_PATCH_VERSION;
-
 #ifdef MAPNIK_2
     typedef mapnik::image_32 mapnik_rgba_image;
 #else
