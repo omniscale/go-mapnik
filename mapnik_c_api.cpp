@@ -56,25 +56,23 @@ int mapnik_register_datasources(const char* path) {
     mapnik_register_reset_last_error();
     try {
 #if MAPNIK_VERSION >= 200200
-        mapnik::datasource_cache::instance().register_datasources(path);
+        return mapnik::datasource_cache::instance().register_datasources(path);
 #else
-        mapnik::datasource_cache::instance()->register_datasources(path);
+        return mapnik::datasource_cache::instance()->register_datasources(path);
 #endif
-        return 0;
     } catch (std::exception const& ex) {
         register_err = new std::string(ex.what());
-        return -1;
+        return 0;
     }
 }
 
 int mapnik_register_fonts(const char* path) {
     mapnik_register_reset_last_error();
     try {
-        mapnik::freetype_engine::register_fonts(path);
-        return 0;
+        return mapnik::freetype_engine::register_fonts(path);
     } catch (std::exception const& ex) {
         register_err = new std::string(ex.what());
-        return -1;
+        return 0;
     }
 }
 
