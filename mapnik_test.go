@@ -195,7 +195,10 @@ func TestLayerStatus(t *testing.T) {
 		return Default
 	}}
 
-	m.SelectLayers(&ts)
+	if selected := m.SelectLayers(&ts); !selected {
+		t.Error("unexpected SelectedLayers result", selected)
+	}
+
 	if !reflect.DeepEqual(m.layerStatus, []bool{true, true, true, false}) {
 		t.Error("unexpected layer status", m.layerStatus)
 	}

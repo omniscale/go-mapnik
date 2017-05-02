@@ -253,19 +253,24 @@ func (f SelectorFunc) Select(layername string) Status {
 }
 
 // SelectLayers enables/disables single layers. LayerSelector or SelectorFunc gets called for each layer.
-func (m *Map) SelectLayers(selector LayerSelector) {
+// Returns true if at least one layer was included (or set to default).
+func (m *Map) SelectLayers(selector LayerSelector) bool {
 	m.storeLayerStatus()
+	selected := false
 	n := C.mapnik_map_layer_count(m.m)
 	for i := 0; i < int(n); i++ {
 		layerName := C.GoString(C.mapnik_map_layer_name(m.m, C.size_t(i)))
 		switch selector.Select(layerName) {
 		case Include:
+			selected = true
 			C.mapnik_map_layer_set_active(m.m, C.size_t(i), 1)
 		case Exclude:
 			C.mapnik_map_layer_set_active(m.m, C.size_t(i), 0)
 		case Default:
+			selected = true
 		}
 	}
+	return selected
 }
 
 // ResetLayer resets all layers to the initial status.
