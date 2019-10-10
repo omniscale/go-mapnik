@@ -14,11 +14,7 @@
 
 
 #if MAPNIK_VERSION < 300000
-#define MAPNIK_2
-#endif
-
-#ifdef MAPNIK_2
-#include <mapnik/graphics.hpp>
+#error go-mapnik requires Mapnik 3
 #endif
 
 #include "mapnik_c_api.h"
@@ -30,11 +26,7 @@ extern "C"
 {
 #endif
 
-#ifdef MAPNIK_2
-    typedef mapnik::image_32 mapnik_rgba_image;
-#else
-    typedef mapnik::image_rgba8 mapnik_rgba_image;
-#endif
+typedef mapnik::image_rgba8 mapnik_rgba_image;
 
 
 static std::string * register_err;
@@ -49,11 +41,7 @@ inline void mapnik_register_reset_last_error() {
 int mapnik_register_datasource(const char* path) {
     mapnik_register_reset_last_error();
     try {
-#if MAPNIK_VERSION >= 200200
         mapnik::datasource_cache::instance().register_datasource(path);
-#else
-        mapnik::datasource_cache::instance()->register_datasource(path);
-#endif
     } catch (std::exception const& ex) {
         register_err = new std::string(ex.what());
         return 0;
@@ -326,12 +314,7 @@ mapnik_image_blob_t * mapnik_image_to_blob(mapnik_image_t * i, const char *forma
 const uint8_t * mapnik_image_to_raw(mapnik_image_t * i, size_t * size) {
     if (i && i->i) {
         *size = i->i->width() * i->i->height() * 4;
-#ifdef MAPNIK_2
-        return i->i->raw_data();
-#else
         return (uint8_t *)i->i->data();
-#endif
-
     }
     return NULL;
 }
@@ -339,11 +322,7 @@ const uint8_t * mapnik_image_to_raw(mapnik_image_t * i, size_t * size) {
 mapnik_image_t * mapnik_image_from_raw(const uint8_t * raw, int width, int height) {
     mapnik_image_t * img = new mapnik_image_t;
     img->i = new mapnik_rgba_image(width, height);
-#ifdef MAPNIK_2
-    memcpy(img->i->raw_data(), raw, width * height * 4);
-#else
     memcpy(img->i->data(), raw, width * height * 4);
-#endif
     img->err = NULL;
     return img;
 }
@@ -357,11 +336,7 @@ int mapnik_map_layer_count(mapnik_map_t * m) {
 
 const char * mapnik_map_layer_name(mapnik_map_t * m, size_t idx) {
     if (m && m->m) {
-#ifdef MAPNIK_2
-        mapnik::layer const& layer = m->m->getLayer(idx);
-#else
         mapnik::layer const& layer = m->m->get_layer(idx);
-#endif
         return layer.name().c_str();
     }
     return NULL;
@@ -369,11 +344,7 @@ const char * mapnik_map_layer_name(mapnik_map_t * m, size_t idx) {
 
 int mapnik_map_layer_is_active(mapnik_map_t * m, size_t idx) {
     if (m && m->m) {
-#ifdef MAPNIK_2
-        mapnik::layer const& layer = m->m->getLayer(idx);
-#else
         mapnik::layer const& layer = m->m->get_layer(idx);
-#endif
         return layer.active();
     }
     return 0;
@@ -381,11 +352,7 @@ int mapnik_map_layer_is_active(mapnik_map_t * m, size_t idx) {
 
 void mapnik_map_layer_set_active(mapnik_map_t * m, size_t idx, int active) {
     if (m && m->m) {
-#ifdef MAPNIK_2
-        mapnik::layer &layer = m->m->getLayer(idx);
-#else
         mapnik::layer &layer = m->m->get_layer(idx);
-#endif
         layer.set_active(active);
     }
 }

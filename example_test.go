@@ -3,7 +3,7 @@ package mapnik_test
 import (
 	"log"
 
-	"github.com/omniscale/go-mapnik"
+	"github.com/omniscale/go-mapnik/v2"
 )
 
 func Example() {
