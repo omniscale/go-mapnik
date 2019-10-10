@@ -159,12 +159,19 @@ func (m *Map) lastError() error {
 }
 
 // Load reads in a Mapnik map XML.
+//
+// Note: Since Mapnik 3 all layers with status="off" are not loaded and cannot
+// be activated by a custom LayerSelector. As a workaround, all layers with names
+// starting with '__OFF__' are disabled on load and the '__OFF__' prefix is removed
+// from the layer name.
 func (m *Map) Load(stylesheet string) error {
 	cs := C.CString(stylesheet)
 	defer C.free(unsafe.Pointer(cs))
 	if C.mapnik_map_load(m.m, cs) != 0 {
 		return m.lastError()
 	}
+
+	C.mapnik_apply_layer_off_hack(m.m)
 	return nil
 }
 

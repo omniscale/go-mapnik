@@ -152,6 +152,22 @@ int mapnik_map_load(mapnik_map_t * m, const char* stylesheet) {
     return -1;
 }
 
+void mapnik_apply_layer_off_hack(mapnik_map_t * m) {
+    // Note: Since Mapnik 3 all layers with status="off" are not loaded and cannot
+    // be activated by a custom LayerSelector. As a workaround, all layers with names
+    // starting with '__OFF__' are disabled on load and the '__OFF__' prefix is removed
+    // from the layer name.
+    if (m && m->m) {
+        for (size_t idx = 0; idx < m->m->layer_count(); idx++) {
+            mapnik::layer &layer = m->m->get_layer(idx);
+            if (layer.name().rfind("__OFF__", 0) == 0) {
+                layer.set_active(false);
+                layer.set_name(layer.name().substr(7));
+            }
+        }
+    }
+}
+
 int mapnik_map_zoom_all(mapnik_map_t * m) {
     mapnik_map_reset_last_error(m);
     if (m && m->m) {

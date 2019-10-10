@@ -49,7 +49,7 @@
         </Datasource>
     </Layer>
 
-    <Layer name="layerD" srs="+init=epsg:4326" status="off">
+    <Layer name="__OFF__layerD" srs="+init=epsg:4326">
         <StyleName>styleD</StyleName>
         <Datasource>
             <Parameter name="file">map.geojson</Parameter>
