@@ -85,8 +85,6 @@ func RegisterFonts(path string) error {
 		// Register fonts one-by-one. See comment in RegisterDatasources.
 		if C.mapnik_register_font(cs) == 0 {
 			e := C.GoString(C.mapnik_register_last_error())
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, path, file, e)
 			if e != "" {
 				return errors.New("registering fonts: " + e)
 			}
