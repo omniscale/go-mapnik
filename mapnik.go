@@ -195,7 +195,8 @@ func (m *Map) SRS() string {
 	return C.GoString(C.mapnik_map_get_srs(m.m))
 }
 
-// SetSRS sets the projection of the map as a proj4 string ('+init=epsg:4326', etc).
+// SetSRS sets the projection of the map as a Proj string ('epsg:4326', or
+// '+init=epsg:4326' if you are using Mapnik with Proj4).
 func (m *Map) SetSRS(srs string) {
 	cs := C.CString(srs)
 	defer C.free(unsafe.Pointer(cs))

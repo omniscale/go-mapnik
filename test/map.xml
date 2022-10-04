@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Map srs="+init=epsg:4326" maximum-extent="-180,-90,180,90" background-color="steelblue">
+<Map srs="epsg:4326" maximum-extent="-180,-90,180,90" background-color="steelblue">
 
     <Style name="styleA">
         <Rule>
@@ -25,7 +25,7 @@
         </Rule>
     </Style>
 
-    <Layer name="layerA" srs="+init=epsg:4326">
+    <Layer name="layerA" srs="epsg:4326">
         <StyleName>styleA</StyleName>
         <Datasource>
             <Parameter name="file">map.geojson</Parameter>
@@ -33,7 +33,7 @@
         </Datasource>
     </Layer>
 
-    <Layer name="layerB" srs="+init=epsg:4326">
+    <Layer name="layerB" srs="epsg:4326">
         <StyleName>styleB</StyleName>
         <Datasource>
             <Parameter name="file">map.geojson</Parameter>
@@ -41,7 +41,7 @@
         </Datasource>
     </Layer>
 
-    <Layer name="layerC" srs="+init=epsg:4326" status="on">
+    <Layer name="layerC" srs="epsg:4326" status="on">
         <StyleName>styleC</StyleName>
         <Datasource>
             <Parameter name="file">map.geojson</Parameter>
@@ -49,7 +49,7 @@
         </Datasource>
     </Layer>
 
-    <Layer name="__OFF__layerD" srs="+init=epsg:4326">
+    <Layer name="__OFF__layerD" srs="epsg:4326">
         <StyleName>styleD</StyleName>
         <Datasource>
             <Parameter name="file">map.geojson</Parameter>

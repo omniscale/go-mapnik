@@ -77,18 +77,18 @@ func TestRenderInvalidFormat(t *testing.T) {
 
 func TestSRS(t *testing.T) {
 	m := New()
-	// default mapnil srs
-	if srs := m.SRS(); srs != "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" {
+	// default mapnik srs
+	if srs := m.SRS(); srs != "epsg:4326" {
 		t.Fatal("unexpected default srs:", srs)
 	}
 	if err := m.Load("test/map.xml"); err != nil {
 		t.Fatal(err)
 	}
-	if m.SRS() != "+init=epsg:4326" {
+	if m.SRS() != "epsg:4326" {
 		t.Error("unexpeced srs: ", m.SRS())
 	}
-	m.SetSRS("+init=epsg:3857")
-	if m.SRS() != "+init=epsg:3857" {
+	m.SetSRS("epsg:3857")
+	if m.SRS() != "epsg:3857" {
 		t.Error("unexpeced srs: ", m.SRS())
 	}
 }
