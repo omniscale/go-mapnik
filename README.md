@@ -23,6 +23,7 @@ You need to set the `CGO_LDFLAGS` and `CGO_CXXFLAGS` environment variables for s
 Refer to the Makefile how `mapnik-config` can be used to extract the required `CGO_LDFLAGS` and `CGO_CXXFLAGS` values. Use `-ldflags` to overwrite the default location of the input plugins and default fonts.
 
 `go-mapnik` is independent of the Proj version. Make sure that your mapfiles and SRS strings use the correct syntax (`epsg:4326` vs. `+init=epsg:4326`).
+You can set the environment `PROJ_USE_PROJ4_INIT_RULES=YES` for backwards compatibility. This supports `+init=epsg:xxx` definitions and keeps the fixed long/lat and E/N axis orientation.
 
 Documentation
 -------------
