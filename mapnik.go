@@ -11,7 +11,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +38,7 @@ func init() {
 
 // RegisterDatasources registers all input plugins found in the given path.
 func RegisterDatasources(path string) error {
-	fileInfos, err := ioutil.ReadDir(path)
+	fileInfos, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
@@ -63,7 +62,7 @@ func RegisterDatasources(path string) error {
 
 // RegisterDatasources registers all fonts found in the given path.
 func RegisterFonts(path string) error {
-	fileInfos, err := ioutil.ReadDir(path)
+	fileInfos, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
@@ -445,11 +444,11 @@ func toNRGBA(src image.Image) *image.NRGBA {
 		return src
 	case *image.RGBA:
 		result := image.NewNRGBA(src.Bounds())
-		drawRGBAOver(result, result.Bounds(), src, image.ZP)
+		drawRGBAOver(result, result.Bounds(), src, image.Point{})
 		return result
 	default:
 		result := image.NewNRGBA(src.Bounds())
-		draw.Draw(result, result.Bounds(), src, image.ZP, draw.Over)
+		draw.Draw(result, result.Bounds(), src, image.Point{}, draw.Over)
 		return result
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"image/color"
 	"image/color/palette"
 	"image/png"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -39,7 +38,7 @@ func TestRenderFile(t *testing.T) {
 	}
 	m.ZoomAll()
 
-	out, err := ioutil.TempDir("", "")
+	out, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("unable to create temp dir")
 	}
@@ -131,7 +130,7 @@ func TestRender(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := ioutil.TempDir("", "")
+	out, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("unable to create temp dir")
 	}
@@ -143,7 +142,7 @@ func TestRender(t *testing.T) {
 	if err := m.RenderToFile(opts, fname); err != nil {
 		t.Fatal(err)
 	}
-	bufFile, err := ioutil.ReadFile(fname)
+	bufFile, err := os.ReadFile(fname)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +152,7 @@ func TestRender(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if bytes.Compare(bufDirect, bufFile) != 0 {
+	if !bytes.Equal(bufDirect, bufFile) {
 		t.Error("RenderFile and Render output differs")
 	}
 }
