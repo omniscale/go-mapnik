@@ -27,13 +27,6 @@ var (
 	Error = LogLevel(C.MAPNIK_ERROR)
 )
 
-var (
-	// You can overwrite defaults at compile time, eg:
-	// go build -ldflags "-X github.com/omniscale/go-mapnik/v2.fontPath $(mapnik-config -fonts)"
-	fontPath   = "/usr/local/lib/mapnik/fonts"
-	pluginPath = "/usr/local/lib/mapnik/input"
-)
-
 func init() {
 	// Register default datasources path and fonts path like the Python bindings do.
 	if err := RegisterDatasources(pluginPath); err != nil {

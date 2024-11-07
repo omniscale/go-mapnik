@@ -4,7 +4,7 @@ go-mapnik
 Description
 -----------
 
-Small wrapper for the Mapnik 3 API to render beautiful maps from Go.
+Small wrapper for the Mapnik 3/4 API to render beautiful maps from Go.
 
 Features:
 
@@ -16,14 +16,29 @@ Features:
 Installation
 ------------
 
-This package requires [Mapnik](http://mapnik.org/) (`libmapnik-dev` on Ubuntu/Debian, `mapnik` in Homebrew).
-Make sure `mapnik-config` is in your `PATH`.
+This package requires [Mapnik](http://mapnik.org/) (`libmapnik` on Ubuntu/Debian, `mapnik` in Homebrew).
 
-You need to set the `CGO_LDFLAGS` and `CGO_CXXFLAGS` environment variables for successful compilation and linking with Mapnik.
-Refer to the Makefile how `mapnik-config` can be used to extract the required `CGO_LDFLAGS` and `CGO_CXXFLAGS` values. Use `-ldflags` to overwrite the default location of the input plugins and default fonts.
+Since v3 of this package you need to call `go generate .` to create a `build_config.go` file with all system dependent build flags.
+Before v3, go-mapnik required setting `CGO_*` environment variables. The new method is easier, but it does not work when you `go get`/import go-mapnik.
+It is recommended to manually vendorize the package into your repo (e.g via `git subtree`).
 
-`go-mapnik` is independent of the Proj version. Make sure that your mapfiles and SRS strings use the correct syntax (`epsg:4326` vs. `+init=epsg:4326`).
-You can set the environment `PROJ_USE_PROJ4_INIT_RULES=YES` for backwards compatibility. This supports `+init=epsg:xxx` definitions and keeps the fixed long/lat and E/N axis orientation.
+Example
+-------
+
+```
+func Example() {
+	m := mapnik.New()
+	if err := m.Load("test/map.xml"); err != nil {
+		log.Fatal(err)
+	}
+	m.Resize(1000, 500)
+	m.ZoomTo(-180, -90, 180, 90)
+	opts := mapnik.RenderOpts{Format: "png32"}
+	if err := m.RenderToFile(opts, "/tmp/go-mapnik-example-1.png"); err != nil {
+		log.Fatal(err)
+	}
+}
+```
 
 Documentation
 -------------

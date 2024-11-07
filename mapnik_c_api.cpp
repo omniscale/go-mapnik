@@ -375,9 +375,17 @@ void mapnik_map_layer_set_active(mapnik_map_t * m, size_t idx, int active) {
 
 int mapnik_map_background(mapnik_map_t * m, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a) {
     if (m && m->m) {
+#if MAPNIK_VERSION > 400000
+        std::optional<mapnik::color> const &bg = m->m->background();
+#else
         boost::optional<mapnik::color> const &bg = m->m->background();
+#endif
         if (bg) {
+#if MAPNIK_VERSION > 400000
+            mapnik::color c = *bg;
+#else
             mapnik::color c = bg.get();
+#endif
             *r = c.red();
             *g = c.green();
             *b = c.blue();
