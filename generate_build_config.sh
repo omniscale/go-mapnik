@@ -3,16 +3,32 @@
 if command -v mapnik-config &> /dev/null
 then
     # Configuration for mapnik 3
+    CGO_CFLAGS=$(mapnik-config --includes)
     CGO_CXXFLAGS=$(mapnik-config --includes)
     CGO_LDFLAGS=$(mapnik-config --libs)
     FONT_DIR=$(mapnik-config --fonts)
     PLUGINS_DIR=$(mapnik-config --input-plugins)
 else
     # Configuration for mapnik >=4
-    CGO_LDFLAGS=$(pkg-config libmapnik --libs)
+    if command -v brew &> /dev/null
+    then
+	export PKG_CONFIG_PATH=$(brew --prefix icu4c)/lib/pkgconfig
+    fi
+    CGO_CFLAGS=$(pkg-config libmapnik --cflags)
     CGO_CXXFLAGS="$(pkg-config libmapnik --cflags) --std=c++17"
+    CGO_LDFLAGS=$(pkg-config libmapnik --libs)
     FONT_DIR=$(pkg-config libmapnik --variable=fonts_dir)
     PLUGINS_DIR=$(pkg-config libmapnik --variable=plugins_dir)
+    if command -v brew &> /dev/null
+    then
+	CGO_CFLAGS="$CGO_CFLAGS -I$(brew --prefix boost)/include"
+	CGO_CXXFLAGS="$CGO_CXXFLAGS -I$(brew --prefix boost)/include"
+    fi
+    if [[ -d /opt/homebrew/include ]]
+    then
+	CGO_CFLAGS="$CGO_CFLAGS -I/opt/homebrew/include"
+	CGO_CXXFLAGS="$CGO_CXXFLAGS -I/opt/homebrew/include"
+    fi
 fi
 
 
@@ -22,6 +38,7 @@ cat <<EOF > build_config.go
 
 package mapnik
 
+// #cgo CFLAGS: ${CGO_CFLAGS}
 // #cgo CXXFLAGS: ${CGO_CXXFLAGS}
 // #cgo LDFLAGS: ${CGO_LDFLAGS}
 import "C"
